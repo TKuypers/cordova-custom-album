@@ -24,9 +24,9 @@ cordova.exec(function(message, id){ //success }, function(error){ //error }, 'Pl
 ```
 The plugin name is the name of this Swift Class (CustomAlbum)
 
-## Available functions
+## Native functions
 
-### Fetch the available photos
+### Fetch the photos from the album
 
 #### getPhotos()
 
