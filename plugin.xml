@@ -17,6 +17,7 @@
         </config-file>
 
         <source-file src="src/ios/Bridging-Header.h" />
+        <source-file src="src/ios/SwiftyJSON.swift" />
         <source-file src="src/ios/CustomAlbum.swift" />
     </platform>
 
