@@ -6,7 +6,7 @@
 cordova plugin add https://github.com/TKuypers/cordova-custom-album
 ```
 
-It is required to set **Bridging-Header.h** as the **Objective-C Bridging Header** in the XCode **Build Settings** tab
+It is required to link **Bridging-Header.h** as the **Objective-C Bridging Header** in the XCode **Build Settings** tab
 Or add the following line to a already existing Bridging Header:
 
 ```
