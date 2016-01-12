@@ -18,7 +18,7 @@ Or add the following line to a already existing Bridging Header:
 
 The functions of this plugin can be executed with the basic **cordova.exec** function
 
-** Example **
+**Example**
 ```
 cordova.exec(function(message, id){ //success }, function(error){ //error }, 'PluginName', 'functionName', [params]);
 ```
@@ -26,7 +26,7 @@ The plugin name is the name of this Swift Class (CustomAlbum)
 
 ## Fetching photos
 
-** getPhotos() **
+### getPhotos()
 
 Return a JSON list containing all the photo's in the custom album
 
@@ -44,7 +44,7 @@ Return a JSON list containing all the photo's in the custom album
 ]
 ```
 
-## Save a photo
+### Save a photo
 
 ** storeImage(url:String) **
 
@@ -53,7 +53,7 @@ Save an image from the web to the custom album
 Returns the local identifier (id)
 
 
-## Remove a photo
+### Remove a photo
 
 ** removeImage(id:String) **
 
