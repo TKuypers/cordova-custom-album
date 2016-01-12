@@ -50,15 +50,11 @@ Return a JSON list containing all the photo's in the custom album
 
 #### storeImage(url:String)
 
-Save an image from the web to the custom album
-
 Returns the local identifier (id)
 
 
 ### Remove a photo
 
 #### removeImage(id:String)
-
-Remove an image based on the local identifier (id)
 
 Returns the local identifier (id)
