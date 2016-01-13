@@ -48,9 +48,9 @@ Return a JSON list containing all the photo's in the custom album
 
 ### Save a photo
 
-#### storeImage(url:String)
+#### storeImage(url:String, reference:String)
 
-Returns the local identifier (id)
+Returns the local identifier (id) and the inserted reference
 
 
 ### Remove a photo
