@@ -118,7 +118,8 @@ import Photos
     {
         //self.cmd = command
             
-        let urlString = command.arguments[0] as! String
+        let urlString       = command.arguments[0] as! String
+        let customReference = command.arguments[1] as! String
         
         let imgURL:NSURL         = NSURL(string: urlString)!
         let request:NSURLRequest = NSURLRequest(URL: imgURL)
@@ -130,7 +131,7 @@ import Photos
                 if error == nil
                 {
                     let img:UIImage = UIImage(data:data!)!
-                    self.saveImage(img, command: command)
+                    self.saveImage(img, reference:customReference, command: command)
                 }
         })
             
@@ -175,7 +176,6 @@ import Photos
         let assetId = command.arguments[0] as! String
         if let assetsToDelete  = self.fetchAssetWithIdentifier(assetId)
         {
-        
             PHPhotoLibrary.sharedPhotoLibrary().performChanges(
             {
                 PHAssetChangeRequest.deleteAssets([assetsToDelete])
@@ -195,7 +195,7 @@ import Photos
     
 
     
-    func saveImage(image: UIImage, command:CDVInvokedUrlCommand)
+    func saveImage(image: UIImage, reference:String, command:CDVInvokedUrlCommand)
     {
         if assetCollection == nil
         {
@@ -217,7 +217,7 @@ import Photos
             { (success, error) -> Void in
                 if success
                 {
-                    let dataResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAsString:imageIdentifier)
+                    let dataResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAsArray:[imageIdentifier!, reference])
                     self.commandDelegate?.sendPluginResult(dataResult, callbackId:command.callbackId)
                 }
                 else
