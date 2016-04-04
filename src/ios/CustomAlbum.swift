@@ -31,7 +31,6 @@ import Photos
         
         if PHPhotoLibrary.authorizationStatus() == PHAuthorizationStatus.Authorized
         {
-
             if let _: AnyObject = collection
             {
                 self.assetCollection = collection
@@ -137,6 +136,7 @@ import Photos
     
     func getPhotos(command:CDVInvokedUrlCommand)
     {
+        
         // check if we're authorized
         if PHPhotoLibrary.authorizationStatus() == PHAuthorizationStatus.Authorized
         {
@@ -147,101 +147,144 @@ import Photos
                 let fetchOptions = PHFetchOptions()
                     fetchOptions.predicate = NSPredicate(format: "mediaType = %i", PHAssetMediaType.Image.rawValue)
                 
-                let dateFormatter            = NSDateFormatter()
-                    dateFormatter.dateFormat = "dd-MM-yyyy H:mm:ss"
-                
-                let writePath = NSURL(fileURLWithPath: NSTemporaryDirectory())//.URLByAppendingPathComponent("plameco")
-                
-                let checkValidation = NSFileManager.defaultManager()
-                
                 var files = [AnyObject]()
                 
+                dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0))
+                {
                 
-                self.photoAssets = PHAsset.fetchAssetsInAssetCollection(self.assetCollection, options: fetchOptions)
-                self.photoAssets.enumerateObjectsUsingBlock{(object: AnyObject!, count: Int, stop: UnsafeMutablePointer<ObjCBool>) in
+                    self.photoAssets = PHAsset.fetchAssetsInAssetCollection(self.assetCollection, options: fetchOptions)
                     
-                    if object is PHAsset
+                    // check if we have files
+                    if self.photoAssets.count == 0
                     {
+                        print("no photos found")
                         
-                        let asset = object as! PHAsset
+                        let errorString : String? = "no assets found"
+                        let errorResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAsString:errorString)
+                        self.commandDelegate?.sendPluginResult(errorResult, callbackId:command.callbackId)
                         
-                        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0))
+                        return
+                    }
+                    
+                    let dateFormatter            = NSDateFormatter()
+                        dateFormatter.dateFormat = "dd-MM-yyyy H:mm:ss"
+                    
+                    
+                    self.photoAssets.enumerateObjectsUsingBlock{(object: AnyObject!, count: Int, stop: UnsafeMutablePointer<ObjCBool>) in
+                        
+                        if object is PHAsset
                         {
-                            asset.requestContentEditingInputWithOptions(PHContentEditingInputRequestOptions()) { (input, _) in
+                            let asset = object as! PHAsset
                             
+                            let newItem = [
+                                "width": String(asset.pixelWidth),
+                                "height": String(asset.pixelHeight),
+                                "created_at": dateFormatter.stringFromDate(asset.creationDate!),
+                                "modified_at": dateFormatter.stringFromDate(asset.modificationDate!),
+                                "id": String(asset.localIdentifier),
+                            ]
                             
-                                if let url = input!.fullSizeImageURL
-                                {
-                                    let fileNameArr = String(url).characters.split{$0 == "/"}.map(String.init)
-                                    let filename = fileNameArr[fileNameArr.count-1]
+                            if newItem.count > 0
+                            {
+                                files.append(newItem)
+                            }
+                            
+                            // when we're done
+                            if files.count == (self.photoAssets.count)
+                            {
+                                print("customalbum: \(files.count)")
+                                
+                                dispatch_async(dispatch_get_main_queue())
+                                { [weak self] in
                                     
-                                    let img         = self.getAssetImage(asset)
-                                    let thumbImgPath  = writePath.URLByAppendingPathComponent("thumb_\(filename)")
-                                    let imgPath       = writePath.URLByAppendingPathComponent("large_\(filename)")
-                                    
-                                    if(!checkValidation.fileExistsAtPath(thumbImgPath.path!))
+                                    if let weakSelf = self
                                     {
-                                        let thumbData = UIImageJPEGRepresentation(img, 0.2);
-                                            thumbData?.writeToFile(thumbImgPath.path!, atomically: true)
-                                    }
-                                    
-                                    if(!checkValidation.fileExistsAtPath(imgPath.path!))
-                                    {
-                                        let imgData = UIImageJPEGRepresentation(img, 1);
-                                            imgData?.writeToFile(imgPath.path!, atomically: true)
-                                    }
-                                        
-                                    let newItem = [
-                                        "order":0,
-                                        "img_path": imgPath.absoluteString,
-                                        "thumb_path": thumbImgPath.absoluteString,
-                                        "width": String(asset.pixelWidth),
-                                        "height": String(asset.pixelHeight),
-                                        "created_at": dateFormatter.stringFromDate(asset.creationDate!),
-                                        "modified_at": dateFormatter.stringFromDate(asset.modificationDate!),
-                                        "filename": filename,
-                                        "id": String(asset.localIdentifier),
-                                    ]
-                                    
-                                    
-                                    files.append(newItem)
-                                                                        
-                                    // when we're done
-                                    if files.count == (self.photoAssets.count)
-                                    {
-                                        print("customalbum: \(files.count)")
-                                        
-                                        dispatch_async(dispatch_get_main_queue())
-                                        { [weak self] in
-                                            
-                                            if let weakSelf = self
-                                            {
-                                                let dataString = JSON(files).rawString()
-                                                let dataResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAsString:dataString)
-                                                weakSelf.commandDelegate?.sendPluginResult(dataResult, callbackId:command.callbackId)
-                                            }
-                                        }
+                                        let dataString = JSON(files).rawString()
+                                        let dataResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAsString:dataString)
+                                        weakSelf.commandDelegate?.sendPluginResult(dataResult, callbackId:command.callbackId)
                                     }
                                 }
-                                
                             }
                         }
                     }
                 }
-                
-                // check if we have files
-                if self.photoAssets.count == 0
-                {
-                    let errorString : String? = "no assets found"
-                    let errorResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAsString:errorString)
-                    self.commandDelegate?.sendPluginResult(errorResult, callbackId:command.callbackId)
-                }
+            
             }
         }
         else
         {
             self.notAuthorized(command)
         }
+    }
+    
+    
+    
+    
+    func createLocalImageTillItWorks(asset:PHAsset, url:NSURL, tries:Int) -> AnyObject
+    {
+        let dateFormatter            = NSDateFormatter()
+            dateFormatter.dateFormat = "dd-MM-yyyy H:mm:ss"
+        
+        let writePath = NSURL(fileURLWithPath: NSTemporaryDirectory())//.URLByAppendingPathComponent("plameco")
+        
+        let checkValidation = NSFileManager.defaultManager()
+        
+        let fileNameArr = String(url).characters.split{$0 == "/"}.map(String.init)
+        let filename = fileNameArr[fileNameArr.count-1]
+        
+        let img                = self.getAssetImage(asset)
+        let thumbImgPath:NSURL = writePath.URLByAppendingPathComponent("thumb_\(filename)")
+        let imgPath:NSURL      = writePath.URLByAppendingPathComponent("large_\(filename)")
+        
+        var hasThumb:Bool = false
+        var hasImg:Bool   = false
+        
+        if(!checkValidation.fileExistsAtPath(thumbImgPath.path!))
+        {
+            let thumbData:NSData = UIImageJPEGRepresentation(img, 0.2)!
+            
+            // write to disk
+            hasThumb = thumbData.writeToFile(thumbImgPath.path!, atomically: true)
+        }
+        else
+        {
+            hasThumb = true
+        }
+        
+        if(!checkValidation.fileExistsAtPath(imgPath.path!))
+        {
+            let imgData:NSData = UIImageJPEGRepresentation(img, 1)!
+            
+            // write to disk
+            hasImg = imgData.writeToFile(imgPath.path!, atomically: true)
+        }
+        else
+        {
+            hasImg = true
+        }
+        
+        // set the item
+        if(hasThumb == true && hasImg == true)
+        {
+            let newItem = [
+                "img_path": imgPath.absoluteString,
+                "thumb_path": thumbImgPath.absoluteString,
+                "filename": filename,
+                "id": String(asset.localIdentifier),
+            ]
+            
+            return newItem
+        }
+        else if(tries < 10)
+        {
+            // try again
+            return self.createLocalImageTillItWorks(asset, url:url, tries:(tries+1))
+        }
+        else
+        {
+            return []
+        }
+        
     }
 
 
@@ -251,7 +294,7 @@ import Photos
     {
         let manager = PHImageManager.defaultManager()
         let option  = PHImageRequestOptions()
-        option.synchronous = true
+            option.synchronous = true
         
         var img     = UIImage()
         
@@ -268,7 +311,6 @@ import Photos
         // ask authorization
         if PHPhotoLibrary.authorizationStatus() == PHAuthorizationStatus.Authorized
         {
-            
             let urlString       = command.arguments[0] as! String
             let customReference = command.arguments[1] as! String
             
@@ -333,7 +375,7 @@ import Photos
         // ask authorization
         if PHPhotoLibrary.authorizationStatus() == PHAuthorizationStatus.Authorized
         {
-            let assetIds       = command.arguments
+            let assetIds:Array = command.arguments
             var assetsToDelete = [AnyObject]()
             
             for assetId in assetIds as! [String]
@@ -367,6 +409,77 @@ import Photos
     
     
     
+    func loadImage(command:CDVInvokedUrlCommand)
+    {
+        // async
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0))
+        {
+            // ask authorization
+            if PHPhotoLibrary.authorizationStatus() == PHAuthorizationStatus.Authorized
+            {
+                let assetId = command.arguments[0] as! String
+                
+                if let assetToFetch = self.fetchAssetWithIdentifier(assetId)
+                {
+                    assetToFetch.requestContentEditingInputWithOptions(PHContentEditingInputRequestOptions()) { (input, _) in
+                        
+                        if let url = input!.fullSizeImageURL
+                        {
+                            let newItem = self.createLocalImageTillItWorks(assetToFetch, url:url, tries:0)
+                            
+                            if newItem.count > 0
+                            {
+                                dispatch_async(dispatch_get_main_queue())
+                                { [weak self] in
+                                        
+                                    if let weakSelf = self
+                                    {                                        
+                                        let dataString = JSON(newItem).rawString()
+                                        let dataResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAsString:dataString)
+                                        weakSelf.commandDelegate?.sendPluginResult(dataResult, callbackId:command.callbackId)
+                                    }
+                                }
+                            }
+                        }
+                        
+                    }
+
+                }
+                else
+                {
+                    dispatch_async(dispatch_get_main_queue())
+                    { [weak self] in
+                        
+                        if let weakSelf = self
+                        {
+                            print("no asset found")
+                            
+                            let errorId : String? = assetId;
+                            let errorResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAsString:errorId)
+                            weakSelf.commandDelegate?.sendPluginResult(errorResult, callbackId:command.callbackId)
+                        }
+                    }
+                }
+            }
+            else
+            {
+                dispatch_async(dispatch_get_main_queue())
+                { [weak self] in
+                    
+                    if let weakSelf = self
+                    {
+                        weakSelf.notAuthorized(command)
+                    }
+                }
+            }
+        }
+    }
+    
+    
+    
+    
+    
+    
     func saveImage(image: UIImage, reference:String, command:CDVInvokedUrlCommand)
     {
         if PHPhotoLibrary.authorizationStatus() == PHAuthorizationStatus.Authorized
@@ -383,7 +496,7 @@ import Photos
                     let assetChangeRequest = PHAssetChangeRequest.creationRequestForAssetFromImage(image)
                     let assetPlaceHolder = assetChangeRequest.placeholderForCreatedAsset
                     let albumChangeRequest = PHAssetCollectionChangeRequest(forAssetCollection: self.assetCollection)
-                    albumChangeRequest!.addAssets([assetPlaceHolder!])
+                        albumChangeRequest!.addAssets([assetPlaceHolder!])
                     
                     imageIdentifier = assetPlaceHolder!.localIdentifier
                     
