@@ -2,7 +2,7 @@
 
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
     id="cordova-custom-album"
-    version="0.1">
+    version="1.0">
     <name>CustomAlbum</name>
     <description>Expertees Cordova Custom Album</description>
     <license>Apache 2.0</license>
@@ -19,6 +19,34 @@
         <source-file src="src/ios/Bridging-Header.h" />
         <source-file src="src/ios/SwiftyJSON.swift" />
         <source-file src="src/ios/CustomAlbum.swift" />
+    </platform>
+
+    <!-- android -->
+    <platform name="android">
+        <config-file target="config.xml" parent="/*">
+            <feature name="BarcodeScanner">
+                <param name="android-package" value="customalbum.CustomAlbum" />
+            </feature>
+            <preference name="android-minSdkVersion" value="17" />
+            <preference name="android-targetSdkVersion" value="23" />
+        </config-file>
+
+
+        <source-file src="src/android/customalbum/CustomAlbum.java" target-dir="src/customalbum/" />
+        <source-file src="src/android/barcodescanner/build-extras.gradle" target-dir="../android" />
+
+        <config-file target="AndroidManifest.xml" parent="/manifest">
+                <uses-sdk android:minSdkVersion="17" android:targetSdkVersion="23" />
+                <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+                <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+        </config-file>
+        
+        <!--
+        <config-file target="AndroidManifest.xml" parent="/manifest/application">
+        </config-file>
+        -->
+
+
     </platform>
 
 </plugin>
