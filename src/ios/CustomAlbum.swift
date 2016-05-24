@@ -13,9 +13,7 @@ import Photos
     
     var imageQueue     = [AnyObject]()
     var isQueueRunning:Bool = false
-    //var currentQueueItem:AnyObject
     
-    //var cmd:CDVInvokedUrlCommand? = nil;
     
     override func pluginInitialize()
     {
