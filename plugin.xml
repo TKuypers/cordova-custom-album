@@ -33,7 +33,7 @@
 
 
         <source-file src="src/android/customalbum/CustomAlbum.java" target-dir="src/customalbum/" />
-        <source-file src="src/android/barcodescanner/build-extras.gradle" target-dir="../android" />
+        <source-file src="src/android/customalbum/build-extras.gradle" target-dir="../android" />
 
         <config-file target="AndroidManifest.xml" parent="/manifest">
                 <uses-sdk android:minSdkVersion="17" android:targetSdkVersion="23" />
