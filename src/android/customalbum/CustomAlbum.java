@@ -9,6 +9,9 @@ import android.util.Log;
 public class CustomAlbum extends CordovaPlugin {
 
 
+    private static String TAG = 'CustomAlbum';
+
+
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView)
     {
@@ -16,13 +19,16 @@ public class CustomAlbum extends CordovaPlugin {
     }
 
     private CallbackContext pluginResult = null;
-    
+
+    private String albumName = null;
+
     @Override
     public boolean execute(String action, JSONArray data, final CallbackContext callbackContext) throws JSONException
     {
-        /*
+
         pluginResult = callbackContext;
 
+        /*
         final Boolean withTorch = data.getBoolean(0);
         final Boolean withFocus = data.getBoolean(1);
 
@@ -52,4 +58,47 @@ public class CustomAlbum extends CordovaPlugin {
         }
         */
     }
+
+
+    private void requestAuthorization()
+    {
+        Log.d(TAG, 'requestAuthorization');
+    }
+
+
+    private void createAlbum(String albumName)
+    {
+        Log.d(TAG, 'createAlbum');
+    }
+
+
+
+    private void getPhotos()
+    {
+        Log.d(TAG, 'getPhotos');
+    }
+
+
+
+    private void storeImage(String url, String reference)
+    {
+        Log.d(TAG, 'storeImage');
+    }
+
+
+
+    private void removeImage(Array localIndentifiers)
+    {
+        Log.d(TAG, 'removeImage');
+    }
+
+
+    private void loadImage(String localIdentifier)
+    {
+        Log.d(TAG, 'loadImage');
+    }
+
 }
+
+
+

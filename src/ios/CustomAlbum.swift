@@ -13,7 +13,7 @@ import Photos
     
     var imageQueue     = [AnyObject]()
     var isQueueRunning:Bool = false
-    
+
     
     override func pluginInitialize()
     {
