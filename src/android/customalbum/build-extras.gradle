@@ -4,8 +4,6 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 }
 
-ext.cdvMinSdkVersion = 17
-
 ext.postBuildExtras = {
     android {
 
