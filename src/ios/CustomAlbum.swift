@@ -14,10 +14,13 @@ import Photos
     var imageQueue     = [AnyObject]()
     var isQueueRunning:Bool = false
 
+    var writePath:NSURL!
     
     override func pluginInitialize()
     {
         super.pluginInitialize()
+        
+        self.writePath = self.getWritePath()
     }
     
     
@@ -228,7 +231,19 @@ import Photos
     
     
     let checkValidation = NSFileManager.defaultManager()
-    let writePath = NSURL(fileURLWithPath: NSTemporaryDirectory())//.URLByAppendingPathComponent("plameco")
+    //let writePath       = getWritePath() //NSURL(fileURLWithPath: NSTemporaryDirectory())//.URLByAppendingPathComponent("plameco")
+    
+    
+    func getWritePath() -> NSURL
+    {
+        let urls = checkValidation.URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask)
+        
+        guard urls.count == 0 else {
+            return urls.first!
+        }
+        
+        return NSURL(fileURLWithPath: NSTemporaryDirectory())
+    }
     
     
     func hasTMPFile(filename:String, type:String) -> Bool
@@ -258,12 +273,9 @@ import Photos
         let imgPath:NSURL      = writePath.URLByAppendingPathComponent("large_\(filename)")
         
         
-        let thumbData:NSData = UIImageJPEGRepresentation(img, 0.2)!
-        let hasThumb = thumbData.writeToFile(thumbImgPath.path!, atomically: true)
-        
-        let imgData:NSData = UIImageJPEGRepresentation(img, 1)!
-        let hasImg = imgData.writeToFile(imgPath.path!, atomically: true)
-        
+        var data:NSData = UIImageJPEGRepresentation(img, 0.2)!
+        let hasThumb    = data.writeToFile(thumbImgPath.path!, atomically: true)
+        let hasImg      = data.writeToFile(imgPath.path!, atomically: true)
         
         // set the item
         if(hasThumb == true && hasImg == true)
@@ -296,7 +308,7 @@ import Photos
     {
         let manager = PHImageManager.defaultManager()
         let option  = PHImageRequestOptions()
-        option.synchronous = true
+            option.synchronous = true
         
         var img     = UIImage()
         
@@ -307,28 +319,39 @@ import Photos
     }
     
     
+    var newStoredImage:UIImage!
+    
     
     func storeImage(command:CDVInvokedUrlCommand)
     {
         // ask authorization
         if PHPhotoLibrary.authorizationStatus() == PHAuthorizationStatus.Authorized
         {
-            let urlString       = command.arguments[0] as! String
-            let customReference = command.arguments[1] as! String
-            
-            let imgURL:NSURL         = NSURL(string: urlString)!
-            let request:NSURLRequest = NSURLRequest(URL: imgURL)
-            
-            NSURLConnection.sendAsynchronousRequest(request, queue: NSOperationQueue.mainQueue(), completionHandler:
-                {
-                    (response: NSURLResponse?,data: NSData?,error: NSError?) -> Void in
-                    
-                    if error == nil
-                    {
-                        let img:UIImage = UIImage(data:data!)!
-                        self.saveImage(img, reference:customReference, command: command)
-                    }
-            })
+            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0))
+            {
+                let urlString       = command.arguments[0] as! String
+                let customReference = command.arguments[1] as! String
+                
+                let imgURL:NSURL         = NSURL(string: urlString)!
+                let request:NSURLRequest = NSURLRequest(URL: imgURL)
+                
+                NSURLConnection.sendAsynchronousRequest(request, queue: NSOperationQueue.mainQueue(), completionHandler:
+                {(response: NSURLResponse?,data: NSData?,error: NSError?) -> Void in
+                        
+                        if error == nil
+                        {
+                            dispatch_async(dispatch_get_main_queue())
+                            { [weak self] in
+                                
+                                if let weakSelf = self
+                                {
+                                    weakSelf.newStoredImage = UIImage(data:data!)
+                                    weakSelf.saveImage(weakSelf.newStoredImage, reference:customReference, command: command)
+                                }
+                            }
+                        }
+                })
+            }
         }
         else
         {
@@ -522,6 +545,7 @@ import Photos
     {
         if PHPhotoLibrary.authorizationStatus() == PHAuthorizationStatus.Authorized
         {
+
             if assetCollection == nil
             {
                 return // if there was an error upstream, skip the save
@@ -543,7 +567,16 @@ import Photos
                     {
                         // try to create a local tmp copy
                         let currAsset = self.fetchAssetWithIdentifier(imageIdentifier!);
-                        self.createLocalImageTillItWorks(currAsset, tries:0);
+                        //self.createLocalImageTillItWorks(currAsset, tries:0);
+                        
+                        let filename = currAsset.valueForKey("filename") as! String
+                        
+                        let thumbImgPath:NSURL = self.writePath.URLByAppendingPathComponent("thumb_\(filename)")
+                        let imgPath:NSURL      = self.writePath.URLByAppendingPathComponent("large_\(filename)")
+                        
+                        var data:NSData = UIImageJPEGRepresentation(image, 0.2)!
+                            data.writeToFile(thumbImgPath.path!, atomically: true)
+                            data.writeToFile(imgPath.path!, atomically: true)
                         
                         // set result
                         let dataResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAsArray:[imageIdentifier!, reference])
