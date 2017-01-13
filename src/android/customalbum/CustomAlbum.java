@@ -380,7 +380,7 @@ public class CustomAlbum extends CordovaPlugin {
             Bitmap bmp = BitmapFactory.decodeStream(is2, null, options);
             Log.d(TAG, "Sample size:"+inSampleSize);
 
-            savePhoto(bmp, path, fileType, fileName);
+            saveImage(bmp, path, fileType, fileName);
         }
         catch (Exception e)
         {
@@ -394,6 +394,7 @@ public class CustomAlbum extends CordovaPlugin {
 
     private void saveBase64Image(String base64URL, String reference) {
         try {
+            Log.d("Base64URL", base64URL.substring(0, 50));
             String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + File.separator + albumName;
             base64URL = base64URL.split(":", 2)[1];
             String[] parts = base64URL.split(";", 2);
@@ -416,11 +417,11 @@ public class CustomAlbum extends CordovaPlugin {
     }
 
 
-    private void savePhoto(Bitmap bmp, String path, String fileType, String fileName) {
+    private void saveImage(Bitmap bmp, String path, String fileType, String fileName) {
         FileOutputStream out = null;
-        File imageFileName = new File(path, fileName);
+        File imageFile = new File(path, fileName);
         try {
-            out = new FileOutputStream(imageFileName);
+            out = new FileOutputStream(imageFile);
             Bitmap.CompressFormat format = (fileType.equals("jpeg") || fileType.equals("jpg")) ? Bitmap.CompressFormat.JPEG : Bitmap.CompressFormat.PNG;
             bmp.compress(format, 100, out);
             bmp.recycle();
@@ -428,7 +429,7 @@ public class CustomAlbum extends CordovaPlugin {
             out.flush();
             out.close();
             // save to photo for other apps
-            refreshGallery(imageFileName);
+            refreshGallery(imageFile);
             // send the result
             JSONArray result = new JSONArray();
             String reference = fileName.substring(0, fileName.lastIndexOf('.'));
