@@ -121,7 +121,7 @@ public class CustomAlbum extends CordovaPlugin {
                 {
                     try
                     {
-                        saveImage(data.getString(0), data.getString(1));
+                        saveBase64Image(data.getString(0), data.getString(1));
                     }
                     catch (JSONException e)
                     {
@@ -378,7 +378,9 @@ public class CustomAlbum extends CordovaPlugin {
             options.inSampleSize = inSampleSize;
 
             Bitmap bmp = BitmapFactory.decodeStream(is2, null, options);
-            savePhoto(bmp, path, fileName);
+            Log.d(TAG, "Sample size:"+inSampleSize);
+
+            savePhoto(bmp, path, fileType, fileName);
         }
         catch (Exception e)
         {
@@ -395,28 +397,26 @@ public class CustomAlbum extends CordovaPlugin {
             String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + File.separator + albumName;
             base64URL = base64URL.split(":", 2)[1];
             String[] parts = base64URL.split(";", 2);
-            String format = parts[0].split("/")[1];
+            String fileType = parts[0].split("/")[1];
             String base64 = parts[1].split(",", 2)[1];
-            if(format.equals("jpeg"))
-              format = "jpg";
-            String fileName = reference + "." + format;
+            if(fileType.equals("jpeg"))
+                fileType = "jpg";
+            String fileName = reference + "." + fileType;
             byte[] decodedString = Base64.decode(base64, Base64.DEFAULT);
             Bitmap bmp = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
             if (bmp == null)
                 pluginResult.error("The image could not be decoded");
             else
-              savePhoto(bmp, path, fileName);
+                savePhoto(bmp, path, fileType, fileName);
         }
         catch (Exception e) {
             Log.d(TAG, "error:"+e.getCause());
-            Log.d(TAG, "no file:"+src+"");
             pluginResult.error(e.getLocalizedMessage());
         }
     }
 
 
-    private JSONArray savePhoto(Bitmap bmp, String path, String fileName) {
-        Log.d(TAG, "Sample size:"+inSampleSize);
+    private void savePhoto(Bitmap bmp, String path, String fileType, String fileName) {
         FileOutputStream out = null;
         File imageFileName = new File(path, fileName);
         try {
@@ -431,6 +431,7 @@ public class CustomAlbum extends CordovaPlugin {
             refreshGallery(imageFileName);
             // send the result
             JSONArray result = new JSONArray();
+            String reference = fileName.substring(0, fileName.lastIndexOf('.'));
             result.put(reference);
             result.put(reference);
             pluginResult.success(result);
@@ -438,7 +439,6 @@ public class CustomAlbum extends CordovaPlugin {
         catch (Exception e) {
             Log.d(TAG, "error:"+e.getCause()+"");
             pluginResult.error(e.getLocalizedMessage());
-            return null;
         }
     }
 
