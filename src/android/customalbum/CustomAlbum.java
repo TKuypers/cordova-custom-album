@@ -408,7 +408,7 @@ public class CustomAlbum extends CordovaPlugin {
             if (bmp == null)
                 pluginResult.error("The image could not be decoded");
             else
-                savePhoto(bmp, path, fileType, fileName);
+                saveImage(bmp, path, fileType, fileName);
         }
         catch (Exception e) {
             Log.d(TAG, "error:"+e.getCause());
