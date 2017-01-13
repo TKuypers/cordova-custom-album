@@ -17,6 +17,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
@@ -101,6 +102,26 @@ public class CustomAlbum extends CordovaPlugin {
                     try
                     {
                         storeImage(data.getString(0), data.getString(1));
+                    }
+                    catch (JSONException e)
+                    {
+                        pluginResult.error(e.getLocalizedMessage());
+                    }
+                }
+            });
+        }
+
+        // save a base64-encoded image
+        else if(action.equals("saveBase64Image"))
+        {
+            this.cordova.getThreadPool().execute(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    try
+                    {
+                        saveImage(data.getString(0), data.getString(1));
                     }
                     catch (JSONException e)
                     {
@@ -357,41 +378,7 @@ public class CustomAlbum extends CordovaPlugin {
             options.inSampleSize = inSampleSize;
 
             Bitmap bmp = BitmapFactory.decodeStream(is2, null, options);
-
-            Log.d(TAG, "Sample size:"+inSampleSize);
-
-            FileOutputStream out = null;
-            File imageFileName   = new File(path, fileName);
-            try
-            {
-                out = new FileOutputStream(imageFileName);
-
-                Bitmap.CompressFormat format = (fileType.equals("jpeg") || fileType.equals("jpg")) ? Bitmap.CompressFormat.JPEG : Bitmap.CompressFormat.PNG;
-
-                // check the filetype
-                bmp.compress(format, 100, out);
-
-                bmp.recycle();
-                bmp = null;
-
-                out.flush();
-                out.close();
-
-                // save to photo for other apps
-                refreshGallery(imageFileName);
-
-                // send the result
-                JSONArray result = new JSONArray();
-                          result.put(reference);
-                          result.put(reference);
-
-                pluginResult.success(result);
-            }
-            catch (Exception e)
-            {
-                Log.d(TAG, "error:"+e.getCause()+"");
-                pluginResult.error(e.getLocalizedMessage());
-            }
+            savePhoto(bmp, path, fileName);
         }
         catch (Exception e)
         {
@@ -403,6 +390,57 @@ public class CustomAlbum extends CordovaPlugin {
 
 
 
+    private void saveBase64Image(String base64URL, String reference) {
+        try {
+            String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + File.separator + albumName;
+            base64URL = base64URL.split(":", 2)[1];
+            String[] parts = base64URL.split(";", 2);
+            String format = parts[0].split("/")[1];
+            String base64 = parts[1].split(",", 2)[1];
+            if(format.equals("jpeg"))
+              format = "jpg";
+            String fileName = reference + "." + format;
+            byte[] decodedString = Base64.decode(base64, Base64.DEFAULT);
+            Bitmap bmp = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+            if (bmp == null)
+                pluginResult.error("The image could not be decoded");
+            else
+              savePhoto(bmp, path, fileName);
+        }
+        catch (Exception e) {
+            Log.d(TAG, "error:"+e.getCause());
+            Log.d(TAG, "no file:"+src+"");
+            pluginResult.error(e.getLocalizedMessage());
+        }
+    }
+
+
+    private JSONArray savePhoto(Bitmap bmp, String path, String fileName) {
+        Log.d(TAG, "Sample size:"+inSampleSize);
+        FileOutputStream out = null;
+        File imageFileName = new File(path, fileName);
+        try {
+            out = new FileOutputStream(imageFileName);
+            Bitmap.CompressFormat format = (fileType.equals("jpeg") || fileType.equals("jpg")) ? Bitmap.CompressFormat.JPEG : Bitmap.CompressFormat.PNG;
+            bmp.compress(format, 100, out);
+            bmp.recycle();
+            bmp = null;
+            out.flush();
+            out.close();
+            // save to photo for other apps
+            refreshGallery(imageFileName);
+            // send the result
+            JSONArray result = new JSONArray();
+            result.put(reference);
+            result.put(reference);
+            pluginResult.success(result);
+        }
+        catch (Exception e) {
+            Log.d(TAG, "error:"+e.getCause()+"");
+            pluginResult.error(e.getLocalizedMessage());
+            return null;
+        }
+    }
 
     private boolean resizeBitmap(File file, File newFile, int maxWidth, int maxHeight)
     {
@@ -740,6 +778,3 @@ public class CustomAlbum extends CordovaPlugin {
         return newArr;
     }
 }
-
-
-
