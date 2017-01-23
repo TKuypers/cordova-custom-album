@@ -261,7 +261,7 @@ import Photos
 
 
 
-    func createLocalImageTillItWorks(asset:PHAsset, tries:Int) -> AnyObject
+    func createLocalImageTillItWorks(asset:PHAsset, tries:Int) -> Any?
     {
         let dateFormatter            = NSDateFormatter()
         dateFormatter.dateFormat = "dd-MM-yyyy H:mm:ss"
