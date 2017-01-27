@@ -2,24 +2,10 @@
 
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
     id="cordova-custom-album"
-    version="1.1">
+    version="1.2">
     <name>CustomAlbum</name>
     <description>Expertees Cordova Custom Album</description>
     <license>Apache 2.0</license>
-
-    <!-- ios -->
-    <platform name="ios">
-        <config-file target="config.xml" parent="/*">
-                <feature name="CustomAlbum">
-                <param name="ios-package" value="CustomAlbum" />
-                <param name="onload" value="true" />
-            </feature>
-        </config-file>
-
-        <source-file src="src/ios/Bridging-Header.h" />
-        <source-file src="src/ios/SwiftyJSON.swift" />
-        <source-file src="src/ios/CustomAlbum.swift" />
-    </platform>
 
     <!-- android -->
     <platform name="android">
